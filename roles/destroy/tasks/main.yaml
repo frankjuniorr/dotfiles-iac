@@ -1,0 +1,38 @@
+---
+
+- name: "Include specific variables to OS"
+  include_vars:
+    file: "group_vars/{{ os }}.yaml"
+  when: os_type is defined
+
+# Removing the VM
+###############################################################
+- name: "Checking if VM exist"
+  ansible.builtin.shell: qm list | awk '{print $1}' | grep {{ vm_id }} || true
+  ignore_errors: true
+  register: vm_exist
+
+- name: "Stop VM if it exists"
+  ansible.builtin.shell: qm stop {{ vm_id }}
+  when: vm_exist.stdout != ""
+  register: stop_result
+  ignore_errors: true
+
+- name: "Destroy VM if it exists"
+  ansible.builtin.shell: qm destroy {{ vm_id }}
+  when: vm_exist.stdout != ""
+  register: stop_result
+  ignore_errors: true
+
+# Removing the Template
+###############################################################
+- name: "Checking if template exist"
+  ansible.builtin.shell: qm list | awk '{print $1}' | grep {{ vm_template_id }} || true
+  ignore_errors: true
+  register: vm_exist
+
+- name: "Destroy VM if it exists"
+  ansible.builtin.shell: qm destroy {{ vm_template_id }}
+  when: vm_exist.stdout != ""
+  register: stop_result
+  ignore_errors: true

@@ -1,0 +1,63 @@
+---
+
+- name: "Incluir variáveis específicas para o SO"
+  ansible.builtin.include_vars:
+    file: "group_vars/{{ os }}.yaml"
+  when: os_type is defined
+
+- name: Define iso filename
+  ansible.builtin.set_fact:
+    iso_filename: "{{ iso_directory }}/{{ iso_url | basename }}"
+
+- name: Check if ISO file already exists
+  ansible.builtin.stat:
+    path: "{{ iso_filename }}"
+  register: iso_file
+
+- name: "Donwload ISO file"
+  ansible.builtin.get_url:
+    url: "{{ iso_url }}"
+    dest: "{{ iso_directory }}"
+  when: not iso_file.stat.exists
+
+- name: "Check if VM already exist"
+  ansible.builtin.shell: qm list | grep -q "{{ vm_template_id }}"
+  register: vm_exists
+  failed_when: "vm_exists.rc == 1 and 'non-zero return code' in vm_exists.stderr"
+  ignore_errors: yes
+
+- name: "Create VM"
+  ansible.builtin.shell: "{{ item }}"
+  loop:
+    - "qm create {{ vm_template_id }} --name {{ vm_template_name }}"
+    - "qm set {{ vm_template_id }} --tags dotfiles"
+    - "qm set {{ vm_template_id }} --sockets {{ sockets }} --cores {{ cores }}"
+    - "qm set {{ vm_template_id }} --memory {{ memory }}"
+    - "qm set {{ vm_template_id }} --net0 virtio,bridge=vmbr0"
+    - "qm set {{ vm_template_id }} --scsihw virtio-scsi-pci"
+    - "qm set {{ vm_template_id }} --ostype l26"
+    - "pvesm alloc {{ vm_storage }} {{ vm_template_id }} vm-{{ vm_template_id }}-disk-0 {{ disk_size }}"
+    - "qm set {{ vm_template_id }} --scsi0  {{ vm_storage }}:vm-{{ vm_template_id }}-disk-0"
+    - "qm set {{ vm_template_id }} --boot c"
+    - "qm set {{ vm_template_id }} --bootdisk ide2"
+    - "qm set {{ vm_template_id }} --cdrom {{ iso_storage }}:iso/{{ iso_url | basename }}"
+    - "qm set {{ vm_template_id }} --agent enabled=1"
+    - "qm set {{ vm_template_id }} --serial0 socket"
+    - "qm set {{ vm_template_id }} --vga qxl,memory=125"
+  when: vm_exists.rc != 0
+
+# Deploy Notes
+###############################################################
+- name: "Deploy VM Notes to /tmp"
+  template:
+    src: notes.md.j2
+    dest: "/tmp/notes_creation.md"
+
+- name: "Apply Notes content"
+  ansible.builtin.shell: |
+    qm set {{ vm_template_id }} --description "$(cat /tmp/notes_creation.md)"
+
+- name: "Remove a VM notes files"
+  ansible.builtin.file:
+    path: "/tmp/notes_creation.md"
+    state: absent

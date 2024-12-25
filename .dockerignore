@@ -1,0 +1,26 @@
+# Ignorar arquivos de configuração do Docker
+Dockerfile
+docker-compose.yaml
+LICENCE
+*.md
+
+# Ignorar ambientes e chaves SSH
+*.pem
+*.pub
+*.key
+*.id_rsa
+*.id_rsa_homelab
+
+# Ignorar arquivos temporários e de cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Ignorar arquivos do Git
+.git/
+.gitignore
+
+# Ignorar arquivos específicos do Ansible
+*.retry

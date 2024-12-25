@@ -1,0 +1,11 @@
+all:
+  vars:
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
+  hosts:
+    proxmox:
+      ansible_host: 192.168.0.115
+      ansible_user: root
+      proxmox_target_node: "solarsystem01"
+
+      iso_directory: "/var/lib/vz/template/iso"

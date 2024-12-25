@@ -1,0 +1,64 @@
+---
+
+- name: "Incluir variáveis específicas para o SO"
+  ansible.builtin.include_vars:
+    file: "group_vars/{{ os }}.yaml"
+  when: os_type is defined
+
+- name: "Check if VM already exist"
+  ansible.builtin.shell: qm list | grep -q "{{ vm_template_id }}"
+  register: vm_exists
+  failed_when: "vm_exists.rc == 1 and 'non-zero return code' in vm_exists.stderr"
+  ignore_errors: yes
+
+- name: "Check if VM is running"
+  ansible.builtin.shell: |
+    qm status {{ vm_template_id }} | grep -q "status: running"
+  register: vm_running
+  failed_when: false
+  changed_when: false
+  when: vm_exists.rc == 0
+
+- name: "Stop VM if it is running"
+  ansible.builtin.shell: |
+    qm stop {{ vm_template_id }}
+  when: vm_running.rc == 0
+  register: stop_vm_result
+  changed_when: vm_running.rc == 0
+  failed_when: stop_vm_result.rc != 0
+
+- name: "Change boot order and remove CDROM"
+  ansible.builtin.shell: "{{ vm_post_install }}"
+  loop:
+    - "qm set {{ vm_template_id }} -ide2 media=cdrom,file=none"
+    - "qm set {{ vm_template_id }} --bootdisk scsi0"
+    - "qm template {{ vm_template_id }}"
+    - "qm clone {{ vm_template_id }} {{ vm_id }} --name {{ vm_name }} --full 1"
+  loop_control:
+    loop_var: "vm_post_install"
+  when: vm_exists.rc == 0
+
+
+# Deploy Notes
+###############################################################
+- name: "Deploy VM Notes to /tmp"
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - {src: "notes.md.j2", dest: "/tmp/notes_creation.md"}
+    - {src: "notes_template.md.j2", dest: "/tmp/notes_template_creation.md"}
+
+- name: "Apply Notes content"
+  ansible.builtin.shell: "qm set {{ item.id }} --description \"$(cat {{ item.template }})\""
+  loop:
+    - {id: "{{ vm_template_id }}", template: "/tmp/notes_template_creation.md"}
+    - {id: "{{ vm_id }}", template: "/tmp/notes_creation.md"}
+
+- name: "Remove a VM notes files"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/notes_template_creation.md"
+    - "/tmp/notes_creation.md"

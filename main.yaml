@@ -1,0 +1,81 @@
+---
+###############################################################
+# PROXMOX TASKS
+###############################################################
+- name: "Proxmox init-configure"
+  hosts: proxmox
+  gather_facts: true
+  become: false
+
+  tasks:
+    - name: "Convert extra-vars to list"
+      ansible.builtin.set_fact:
+        os_type: "{{ os_type_list | from_yaml }}"
+      tags:
+        - "always"
+
+    - name: DEBUG
+      debug:
+        msg: "{{ item }}"
+      loop: "{{ os_type }}"
+      tags: debug
+
+########################## Create VM ##########################
+    - name: "Creating VMs on Proxmox"
+      ansible.builtin.include_role:
+        name: create
+        apply:
+          tags: create
+      vars:
+        - os: "{{ item }}"
+      tags: "create"
+      loop: "{{ os_type }}"
+      when: os_type is defined
+
+########################## Post-Install ##########################
+    - name: "Configure VM"
+      ansible.builtin.include_role:
+        name: post-install
+        apply:
+          tags: post-install
+      vars:
+        - os: "{{ item }}"
+      tags: "post-install"
+      loop: "{{ os_type }}"
+      when: os_type is defined
+
+########################## Start VM ##########################
+    - name: "Start VM"
+      ansible.builtin.include_role:
+        name: start
+        apply:
+          tags: start
+      vars:
+        - os: "{{ item }}"
+      tags: "start"
+      loop: "{{ os_type }}"
+      when: os_type is defined
+
+########################## Stop VM ##########################
+    - name: "Stop VM"
+      ansible.builtin.include_role:
+        name: stop
+        apply:
+          tags: stop
+      vars:
+        - os: "{{ item }}"
+      tags: "stop"
+      loop: "{{ os_type }}"
+      when: os_type is defined
+
+########################## Destroy VM ##########################
+    - name: "Removing VMs on Proxmox"
+      ansible.builtin.include_role:
+        name: destroy
+        apply:
+          tags: destroy
+      vars:
+        - os: "{{ item }}"
+      tags: "destroy"
+      loop: "{{ os_type }}"
+      when: os_type is defined

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  dotfiles-iac:
+    container_name: dotfiles-iac-ubuntu
+    image: dotfiles-iac
+    command: >
+      ansible-playbook main.yaml -i hosts.yaml
+      --extra-vars "os_type_list=['ubuntu','arch']"
+      --tags "debug"
+    volumes:
+      - $SSH_AUTH_SOCK:/tmp/ssh_auth_sock
+    environment:
+      - SSH_AUTH_SOCK=/tmp/ssh_auth_sock
