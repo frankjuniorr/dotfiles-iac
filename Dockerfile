@@ -1,5 +1,7 @@
 FROM ubuntu:24.04
 
+LABEL org.opencontainers.image.source="https://github.com/frankjuniorr/dotfiles-iac"
+
 RUN apt update && apt install -y \
     software-properties-common \
     python3 \
