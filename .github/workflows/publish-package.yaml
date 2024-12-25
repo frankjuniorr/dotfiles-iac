@@ -23,8 +23,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         gh release create "${{ env.TAG }}" \
-            --repo="$GITHUB_REPOSITORY" \
-            --title="${GITHUB_REPOSITORY#*/} ${{ env.TAG }}" \
+            --repo="${{ github.repository }}" \
+            --title="${{ github.repository#*/}} ${{ env.TAG }}" \
             --generate-notes
 
     - name: Login to GitHub Container Registry
