@@ -24,7 +24,7 @@ jobs:
       run: |
         gh release create "${{ env.TAG }}" \
             --repo="${{ github.repository }}" \
-            --title="${{ github.repository#*/}} ${{ env.TAG }}" \
+            --title="Release ${{ env.TAG }}" \
             --generate-notes
 
     - name: Login to GitHub Container Registry
