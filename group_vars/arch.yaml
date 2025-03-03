@@ -6,7 +6,7 @@ vm_name: "dotfiles-arch"
 vm_storage: "local-lvm"
 vm_user: "arch"
 iso_storage: "local"
-iso_url: "https://archlinux.c3sl.ufpr.br/iso/2024.12.01/archlinux-x86_64.iso"
+iso_base_url: "https://archlinux.c3sl.ufpr.br/iso/latest/"
 operation_system: "Arch Linux 2024.12.01"
 logo_url: "https://img.icons8.com/?size=150&id=uIXgLv5iSlLJ&format=png&color=000000"
 

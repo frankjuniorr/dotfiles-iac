@@ -6,7 +6,7 @@ vm_name: "dotfiles-ubuntu"
 vm_storage: "local-lvm"
 vm_user: "ubuntu"
 iso_storage: "local"
-iso_url: "https://deb.campolargo.pr.gov.br/ubuntu/releases/24.04.1/ubuntu-24.04.1-desktop-amd64.iso"
+iso_base_url: "https://deb.campolargo.pr.gov.br/ubuntu/releases/24.04.1/"
 operation_system: "Ubuntu 24.04 LTS"
 logo_url: "https://img.icons8.com/?size=150&id=63208&format=png&color=000000"
 

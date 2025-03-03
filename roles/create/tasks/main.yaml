@@ -5,20 +5,41 @@
     file: "group_vars/{{ os }}.yaml"
   when: os_type is defined
 
-- name: Define iso filename
-  ansible.builtin.set_fact:
-    iso_filename: "{{ iso_directory }}/{{ iso_url | basename }}"
+- name: "get list of files from URL"
+  ansible.builtin.uri:
+    url: "{{ iso_base_url }}"
+    return_content: yes
+  register: page_content
 
-- name: Check if ISO file already exists
+- name: "Arch | Extract most recent filename"
+  ansible.builtin.set_fact:
+    iso_file: "{{ page_content.content | regex_findall('archlinux-\\d{4}\\.\\d{2}\\.\\d{2}-x86_64\\.iso') | first }}"
+  when: vm_user == 'arch'
+
+- name: "Ubuntu | Extract most recent filename"
+  ansible.builtin.set_fact:
+    iso_file: "{{ page_content.content | regex_findall('ubuntu-\\d{2}\\.\\d{2}\\.\\d-desktop-amd64\\.iso') | first }}"
+  when: vm_user == 'ubuntu'
+
+- name: "Define Complete URL"
+  ansible.builtin.set_fact:
+    iso_url: "{{ iso_base_url }}{{ iso_file }}"
+
+- name: "Debug Complete URL"
+  debug:
+    msg: "{{ iso_url }}"
+
+- name: "Check if ISO file exists"
   ansible.builtin.stat:
-    path: "{{ iso_filename }}"
-  register: iso_file
+    path: "{{ iso_directory }}/{{ iso_file }}"
+  register: iso_stat
+
 
 - name: "Donwload ISO file"
   ansible.builtin.get_url:
     url: "{{ iso_url }}"
     dest: "{{ iso_directory }}"
-  when: not iso_file.stat.exists
+  when: not iso_stat.stat.exists
 
 - name: "Check if VM already exist"
   ansible.builtin.shell: qm list | grep -q "{{ vm_template_id }}"
