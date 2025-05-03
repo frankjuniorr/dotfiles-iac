@@ -1,0 +1,12 @@
+---
+- name: "Executar script shell no host remoto"
+  ansible.builtin.script: "files/ubuntu-download.sh"
+  register: iso_url
+
+- name: "Ubuntu | Define iso url"
+  ansible.builtin.set_fact:
+    iso_url: "{{ iso_url.stdout_lines[0] }}"
+
+- name: "Ubuntu | Define iso file"
+  ansible.builtin.set_fact:
+    iso_file: "{{ iso_url | basename }}"

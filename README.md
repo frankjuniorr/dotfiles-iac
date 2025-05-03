@@ -66,8 +66,19 @@ After completing these steps, it is recommended to create a snapshot in Proxmox.
 ### Other commands
 The start, stop, and destroy commands are control commands used to manage the VM lifecycle.
 
+## Just
+To execute code, run:
+```bash
+# sintaxe: just "<tag/command>" "<OS>"
+just "create" "ubuntu"
+# or
+just "create" "arch"
+# or
+just "post-install" "arch"
+```
+
 ## Ansible
-To execute the playbook with Ansibl:
+To execute the playbook with Ansible:
 - Set the `os_type_list` external variable to either "ubuntu" or "arch".
 - Adjust the tags to specify which commands to execute
 

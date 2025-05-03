@@ -1,0 +1,8 @@
+---
+- name: "Arch | Extract most recent filename"
+  ansible.builtin.set_fact:
+    iso_file: "{{ page_content.content | regex_findall('archlinux-\\d{4}\\.\\d{2}\\.\\d{2}-x86_64\\.iso') | first }}"
+
+- name: "Arch | Define Complete URL"
+  ansible.builtin.set_fact:
+    iso_url: "{{ iso_base_url }}{{ iso_file }}"
