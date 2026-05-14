@@ -1,17 +1,17 @@
 ---
 
-- name: "Incluir variáveis específicas para o SO"
+- name: "Load OS-specific variables"
   ansible.builtin.include_vars:
     file: "group_vars/{{ os }}.yaml"
   when: os_type is defined
 
-- name: "Check if VM already exist"
-  ansible.builtin.shell: qm list | grep -q "{{ vm_template_id }}"
+- name: "Check if template VM already exists"
+  ansible.builtin.shell: qm list | awk '{print $1}' | grep -x "{{ vm_template_id }}"
   register: vm_exists
-  failed_when: "vm_exists.rc == 1 and 'non-zero return code' in vm_exists.stderr"
-  ignore_errors: yes
+  failed_when: false
+  changed_when: false
 
-- name: "Check if VM is running"
+- name: "Check if template VM is running"
   ansible.builtin.shell: |
     qm status {{ vm_template_id }} | grep -q "status: running"
   register: vm_running
@@ -19,15 +19,25 @@
   changed_when: false
   when: vm_exists.rc == 0
 
-- name: "Stop VM if it is running"
+- name: "Stop template VM before post-install"
   ansible.builtin.shell: |
     qm stop {{ vm_template_id }}
-  when: vm_running.rc == 0
+  when: vm_exists.rc == 0 and vm_running.rc == 0
   register: stop_vm_result
-  changed_when: vm_running.rc == 0
+  changed_when: true
   failed_when: stop_vm_result.rc != 0
 
-- name: "Change boot order and remove CDROM"
+- name: "Wait for template VM to be stopped"
+  ansible.builtin.shell: |
+    qm status {{ vm_template_id }} | grep -q "status: stopped"
+  register: vm_stop_wait
+  until: vm_stop_wait.rc == 0
+  retries: 30
+  delay: 5
+  changed_when: false
+  when: vm_exists.rc == 0 and vm_running.rc == 0
+
+- name: "Change boot order, remove CDROM, convert to template, and clone"
   ansible.builtin.shell: "{{ vm_post_install }}"
   loop:
     - "qm set {{ vm_template_id }} -ide2 media=cdrom,file=none"
@@ -41,24 +51,30 @@
 
 # Deploy Notes
 ###############################################################
-- name: "Deploy VM Notes to /tmp"
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+- name: "Render VM notes templates to /tmp"
+  ansible.builtin.template:
+    src: "{{ note_file.src }}"
+    dest: "{{ note_file.dest }}"
   loop:
     - {src: "notes.md.j2", dest: "/tmp/notes_creation.md"}
     - {src: "notes_template.md.j2", dest: "/tmp/notes_template_creation.md"}
+  loop_control:
+    loop_var: note_file
 
-- name: "Apply Notes content"
-  ansible.builtin.shell: "qm set {{ item.id }} --description \"$(cat {{ item.template }})\""
+- name: "Apply notes to VM and template descriptions"
+  ansible.builtin.shell: "qm set {{ note_target.id }} --description \"$(cat {{ note_target.template }})\""
   loop:
     - {id: "{{ vm_template_id }}", template: "/tmp/notes_template_creation.md"}
     - {id: "{{ vm_id }}", template: "/tmp/notes_creation.md"}
+  loop_control:
+    loop_var: note_target
 
-- name: "Remove a VM notes files"
+- name: "Remove temporary VM notes files"
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ note_path }}"
     state: absent
   loop:
     - "/tmp/notes_template_creation.md"
     - "/tmp/notes_creation.md"
+  loop_control:
+    loop_var: note_path

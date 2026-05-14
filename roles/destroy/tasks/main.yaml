@@ -1,15 +1,16 @@
 ---
 
-- name: "Include specific variables to OS"
-  include_vars:
+- name: "Load OS-specific variables"
+  ansible.builtin.include_vars:
     file: "group_vars/{{ os }}.yaml"
   when: os_type is defined
 
 # Removing the VM
 ###############################################################
-- name: "Checking if VM exist"
-  ansible.builtin.shell: qm list | awk '{print $1}' | grep {{ vm_id }} || true
-  ignore_errors: true
+- name: "Check if VM exists"
+  ansible.builtin.shell: qm list | awk '{print $1}' | grep -x "{{ vm_id }}"
+  failed_when: false
+  changed_when: false
   register: vm_exist
 
 - name: "Stop VM if it exists"
@@ -18,21 +19,32 @@
   register: stop_result
   ignore_errors: true
 
+- name: "Wait for VM to be stopped"
+  ansible.builtin.shell: |
+    qm status {{ vm_id }} | grep -q "status: stopped"
+  register: vm_stop_wait
+  until: vm_stop_wait.rc == 0
+  retries: 30
+  delay: 5
+  changed_when: false
+  when: vm_exist.stdout != ""
+
 - name: "Destroy VM if it exists"
   ansible.builtin.shell: qm destroy {{ vm_id }}
   when: vm_exist.stdout != ""
-  register: stop_result
+  register: destroy_result
   ignore_errors: true
 
 # Removing the Template
 ###############################################################
-- name: "Checking if template exist"
-  ansible.builtin.shell: qm list | awk '{print $1}' | grep {{ vm_template_id }} || true
-  ignore_errors: true
-  register: vm_exist
+- name: "Check if template VM exists"
+  ansible.builtin.shell: qm list | awk '{print $1}' | grep -x "{{ vm_template_id }}"
+  failed_when: false
+  changed_when: false
+  register: template_exist
 
-- name: "Destroy VM if it exists"
+- name: "Destroy template VM if it exists"
   ansible.builtin.shell: qm destroy {{ vm_template_id }}
-  when: vm_exist.stdout != ""
-  register: stop_result
+  when: template_exist.stdout != ""
+  register: destroy_template_result
   ignore_errors: true

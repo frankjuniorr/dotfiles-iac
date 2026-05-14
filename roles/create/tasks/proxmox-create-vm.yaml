@@ -1,12 +1,12 @@
 ---
-- name: "Check if VM already exist"
-  ansible.builtin.shell: qm list | grep -q "{{ vm_template_id }}"
+- name: "Check if template VM already exists"
+  ansible.builtin.shell: qm list | awk '{print $1}' | grep -x "{{ vm_template_id }}"
   register: vm_exists
-  failed_when: "vm_exists.rc == 1 and 'non-zero return code' in vm_exists.stderr"
-  ignore_errors: yes
+  failed_when: false
+  changed_when: false
 
 - name: "Create VM"
-  ansible.builtin.shell: "{{ item }}"
+  ansible.builtin.shell: "{{ cmd }}"
   loop:
     - "qm create {{ vm_template_id }} --name {{ vm_template_name }}"
     - "qm set {{ vm_template_id }} --tags dotfiles"
@@ -23,20 +23,22 @@
     - "qm set {{ vm_template_id }} --agent enabled=1"
     - "qm set {{ vm_template_id }} --serial0 socket"
     - "qm set {{ vm_template_id }} --vga qxl,memory=125"
+  loop_control:
+    loop_var: cmd
   when: vm_exists.rc != 0
 
 # Deploy Notes
 ###############################################################
-- name: "Deploy VM Notes to /tmp"
-  template:
+- name: "Render VM notes template to /tmp"
+  ansible.builtin.template:
     src: notes.md.j2
     dest: "/tmp/notes_creation.md"
 
-- name: "Apply Notes content"
+- name: "Apply notes to VM description"
   ansible.builtin.shell: |
     qm set {{ vm_template_id }} --description "$(cat /tmp/notes_creation.md)"
 
-- name: "Remove a VM notes files"
+- name: "Remove temporary VM notes file"
   ansible.builtin.file:
     path: "/tmp/notes_creation.md"
     state: absent

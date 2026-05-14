@@ -1,15 +1,15 @@
 ---
 
-- name: "Incluir variáveis específicas para o SO"
+- name: "Load OS-specific variables"
   ansible.builtin.include_vars:
     file: "group_vars/{{ os }}.yaml"
   when: os_type is defined
 
-- name: "Check if VM already exist"
-  ansible.builtin.shell: qm list | grep -q "{{ vm_id }}"
+- name: "Check if VM already exists"
+  ansible.builtin.shell: qm list | awk '{print $1}' | grep -x "{{ vm_id }}"
   register: vm_exists
-  failed_when: "vm_exists.rc == 1 and 'non-zero return code' in vm_exists.stderr"
-  ignore_errors: yes
+  failed_when: false
+  changed_when: false
 
 - name: "Check if VM is running"
   ansible.builtin.shell: |
@@ -22,7 +22,17 @@
 - name: "Stop VM if it is running"
   ansible.builtin.shell: |
     qm stop {{ vm_id }}
-  when: vm_running.rc == 0
+  when: vm_exists.rc == 0 and vm_running.rc == 0
   register: stop_vm_result
-  changed_when: vm_running.rc == 0
+  changed_when: true
   failed_when: stop_vm_result.rc != 0
+
+- name: "Wait for VM to be stopped"
+  ansible.builtin.shell: |
+    qm status {{ vm_id }} | grep -q "status: stopped"
+  register: vm_stop_wait
+  until: vm_stop_wait.rc == 0
+  retries: 30
+  delay: 5
+  changed_when: false
+  when: vm_exists.rc == 0 and vm_running.rc == 0

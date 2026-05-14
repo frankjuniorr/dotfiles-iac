@@ -14,32 +14,33 @@
       tags:
         - "always"
 
-    - name: DEBUG
-      debug:
+    - name: "Debug os_type list"
+      ansible.builtin.debug:
         msg: "{{ item }}"
       loop: "{{ os_type }}"
+      changed_when: false
       tags: debug
 
 ########################## Create VM ##########################
-    - name: "Creating VMs on Proxmox"
+    - name: "Create VMs on Proxmox"
       ansible.builtin.include_role:
         name: create
         apply:
           tags: create
       vars:
-        - os: "{{ item }}"
+        os: "{{ item }}"
       tags: "create"
       loop: "{{ os_type }}"
       when: os_type is defined
 
 ########################## Post-Install ##########################
-    - name: "Configure VM"
+    - name: "Post-install VM configuration"
       ansible.builtin.include_role:
         name: post-install
         apply:
           tags: post-install
       vars:
-        - os: "{{ item }}"
+        os: "{{ item }}"
       tags: "post-install"
       loop: "{{ os_type }}"
       when: os_type is defined
@@ -51,7 +52,7 @@
         apply:
           tags: start
       vars:
-        - os: "{{ item }}"
+        os: "{{ item }}"
       tags: "start"
       loop: "{{ os_type }}"
       when: os_type is defined
@@ -63,19 +64,19 @@
         apply:
           tags: stop
       vars:
-        - os: "{{ item }}"
+        os: "{{ item }}"
       tags: "stop"
       loop: "{{ os_type }}"
       when: os_type is defined
 
 ########################## Destroy VM ##########################
-    - name: "Removing VMs on Proxmox"
+    - name: "Destroy VMs on Proxmox"
       ansible.builtin.include_role:
         name: destroy
         apply:
           tags: destroy
       vars:
-        - os: "{{ item }}"
+        os: "{{ item }}"
       tags: "destroy"
       loop: "{{ os_type }}"
       when: os_type is defined

@@ -1,38 +1,37 @@
 ---
 
-- name: "Incluir variáveis específicas para o SO"
+- name: "Load OS-specific variables"
   ansible.builtin.include_vars:
     file: "group_vars/{{ os }}.yaml"
   when: os_type is defined
 
-- name: "get list of files from URL"
-  ansible.builtin.uri:
-    url: "{{ iso_base_url }}"
-    return_content: yes
-  register: page_content
-
-- name: "Identify ISO URL to download"
-  include_tasks: arch-download.yaml
+- name: "Identify Arch Linux ISO URL"
+  ansible.builtin.include_tasks: arch-download.yaml
   when: vm_user == 'arch'
 
-- name: "Identify ISO URL to download"
-  include_tasks: ubuntu-download.yaml
+- name: "Identify Ubuntu ISO URL"
+  ansible.builtin.include_tasks: ubuntu-download.yaml
   when: vm_user == 'ubuntu'
 
-- name: "Debug Complete URL"
-  debug:
-    msg: "{{ iso_url }}"
+- name: "Identify Omarchy ISO URL"
+  ansible.builtin.include_tasks: omarchy-download.yaml
+  when: vm_user == 'omarchy'
 
-- name: "Check if ISO file exists"
+- name: "Debug complete ISO URL"
+  ansible.builtin.debug:
+    msg: "{{ iso_url }}"
+  changed_when: false
+
+- name: "Check if ISO file already exists"
   ansible.builtin.stat:
     path: "{{ iso_directory }}/{{ iso_file }}"
   register: iso_stat
 
-- name: "Donwload ISO file"
+- name: "Download ISO file"
   ansible.builtin.get_url:
     url: "{{ iso_url }}"
     dest: "{{ iso_directory }}"
   when: not iso_stat.stat.exists
 
 - name: "Create VM on Proxmox"
-  include_tasks: proxmox-create-vm.yaml
+  ansible.builtin.include_tasks: proxmox-create-vm.yaml
