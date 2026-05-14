@@ -1,0 +1,12 @@
+---
+- name: "Run shell script on remote host"
+  ansible.builtin.script: "files/omarchy-download.sh"
+  register: iso_url_result
+
+- name: "Omarchy | Define iso url"
+  ansible.builtin.set_fact:
+    iso_url: "{{ iso_url_result.stdout_lines[0] }}"
+
+- name: "Omarchy | Define iso file"
+  ansible.builtin.set_fact:
+    iso_file: "{{ iso_url | basename }}"

@@ -1,6 +1,6 @@
 ---
-vm_template_id: "200"
-vm_id: "201"
+vm_template_id: "900"
+vm_id: "901"
 vm_template_name: "dotfiles-arch-template"
 vm_name: "dotfiles-arch"
 vm_storage: "local-lvm"

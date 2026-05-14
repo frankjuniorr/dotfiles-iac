@@ -1,0 +1,17 @@
+---
+vm_template_id: "910"
+vm_id: "911"
+vm_template_name: "dotfiles-omarchy-template"
+vm_name: "dotfiles-omarchy"
+vm_storage: "local-lvm"
+vm_user: "omarchy"
+iso_storage: "local"
+iso_base_url: "https://omarchy.org"
+operation_system: "Omarchy"
+logo_url: "https://img.icons8.com/?size=150&id=uIXgLv5iSlLJ&format=png&color=000000"
+
+# resources — desktop needs more RAM and disk than headless Arch/Ubuntu
+memory: 8192
+cores: 4
+sockets: 1
+disk_size: 40G

@@ -1,6 +1,6 @@
 ---
-vm_template_id: "100"
-vm_id: "101"
+vm_template_id: "920"
+vm_id: "921"
 vm_template_name: "dotfiles-ubuntu-template"
 vm_name: "dotfiles-ubuntu"
 vm_storage: "local-lvm"
