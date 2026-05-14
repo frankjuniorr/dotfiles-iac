@@ -1,8 +1,12 @@
 ---
-- name: "Arch | Extract most recent filename"
-  ansible.builtin.set_fact:
-    iso_file: "{{ page_content.content | regex_findall('archlinux-\\d{4}\\.\\d{2}\\.\\d{2}-x86_64\\.iso') | first }}"
+- name: "Run shell script on remote host"
+  ansible.builtin.script: "files/arch-download.sh"
+  register: iso_url_result
 
-- name: "Arch | Define Complete URL"
+- name: "Arch | Define iso url"
   ansible.builtin.set_fact:
-    iso_url: "{{ iso_base_url }}{{ iso_file }}"
+    iso_url: "{{ iso_url_result.stdout_lines[0] }}"
+
+- name: "Arch | Define iso file"
+  ansible.builtin.set_fact:
+    iso_file: "{{ iso_url | basename }}"
